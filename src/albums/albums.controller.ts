@@ -1,0 +1,200 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
+import { AlbumsService } from './albums.service';
+import { CreateAlbumDto } from './dto/create-album.dto';
+import { UpdateAlbumDto } from './dto/update-album.dto';
+
+import type { Album } from './interfaces/album.interface';
+import type { Photo } from './interfaces/photo.interface';
+import type { PhotosResponse, PhotosThumbnailsResponse } from './interfaces/photos-response.interface';
+
+@Controller('albums')
+export class AlbumsController {
+  constructor(private readonly albumsService: AlbumsService) {}
+
+  @Post()
+  async create(@Body() createAlbumDto: CreateAlbumDto): Promise<Album> {
+    return await this.albumsService.create(createAlbumDto);
+  }
+
+  @Get()
+  async findAll(): Promise<Album[]> {
+    return await this.albumsService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<Album> {
+    return await this.albumsService.findOne(id);
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto): Promise<Album> {
+    return await this.albumsService.update(id, updateAlbumDto);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<void> {
+    return await this.albumsService.remove(id);
+  }
+
+  // === ENDPOINTS POUR LES PHOTOS ===
+
+  // Récupérer toutes les photos d'un album (avec images complètes)
+  @Get(':id/photos')
+  async getAlbumPhotos(
+    @Param('id') albumId: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('order') order?: 'asc' | 'desc',
+  ): Promise<PhotosResponse> {
+    const maxPhotos = limit ? parseInt(limit, 10) : undefined;
+    const offsetValue = offset ? parseInt(offset, 10) : 0;
+    const sortOrder = order === 'asc' ? 'asc' : 'desc'; // Par défaut: desc (plus récentes en premier)
+    return await this.albumsService.getAlbumPhotos(albumId, maxPhotos, offsetValue, sortOrder);
+  }
+  
+  // Récupérer uniquement les miniatures des photos d'un album (pour les listes)
+  @Get(':id/photos/thumbnails')
+  async getAlbumPhotoThumbnails(
+    @Param('id') albumId: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('order') order?: 'asc' | 'desc',
+  ): Promise<PhotosThumbnailsResponse> {
+    const maxPhotos = limit ? parseInt(limit, 10) : undefined;
+    const offsetValue = offset ? parseInt(offset, 10) : 0;
+    const sortOrder = order === 'asc' ? 'asc' : 'desc'; // Par défaut: desc (plus récentes en premier)
+    return await this.albumsService.getAlbumPhotoThumbnails(albumId, maxPhotos, offsetValue, sortOrder);
+  }
+
+  // Récupérer une photo spécifique
+  @Get(':albumId/photos/:photoId')
+  async getPhoto(
+    @Param('albumId') albumId: string,
+    @Param('photoId') photoId: string,
+  ): Promise<Photo> {
+    return await this.albumsService.getPhoto(albumId, photoId);
+  }
+
+  // Ajouter une photo à un album
+  @Post(':id/photos')
+  async addPhoto(
+    @Param('id') albumId: string,
+    @Body('image') image: string, // Base64 ou données binaires
+  ): Promise<Photo> {
+    if (!image) {
+      throw new Error('image est requis');
+    }
+    
+    try {
+      // Nettoyer la chaîne base64 (supprimer les espaces, retours à la ligne, etc.)
+      let cleanImage = image.replace(/\s/g, '');
+      
+      // Gérer le préfixe data:image/...;base64,
+      if (cleanImage.includes('data:image/') && cleanImage.includes(';base64,')) {
+        const base64Start = cleanImage.indexOf(';base64,') + 8;
+        cleanImage = cleanImage.substring(base64Start);
+        console.log('🔍 Préfixe MIME détecté et supprimé');
+      }
+      
+      // Validation de base64
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanImage)) {
+        console.error('❌ Format base64 invalide:', cleanImage.substring(0, 50) + '...');
+        throw new Error('Format base64 invalide');
+      }
+      
+      console.log('✅ Format base64 valide, longueur:', cleanImage.length);
+      
+      // Convertir le base64 en Buffer
+      const buffer = Buffer.from(cleanImage, 'base64');
+      
+      // Validation de la taille
+      if (buffer.length < 100) {
+        throw new Error('Image trop petite, données corrompues');
+      }
+      
+      if (buffer.length > 50 * 1024 * 1024) { // 50MB max
+        throw new Error('Image trop volumineuse (max 50MB)');
+      }
+      
+      console.log('📸 Buffer créé avec succès, taille:', buffer.length, 'bytes');
+      
+      return this.albumsService.addPhoto(albumId, buffer);
+    } catch (error) {
+      if (error.message.includes('base64')) {
+        throw new Error('Format d\'image invalide. Assurez-vous que l\'image est bien encodée en base64.');
+      }
+      throw error;
+    }
+  }
+
+  // Mettre à jour une photo
+  @Patch(':albumId/photos/:photoId')
+  async updatePhoto(
+    @Param('albumId') albumId: string,
+    @Param('photoId') photoId: string,
+    @Body('image') image: string,
+  ): Promise<Photo> {
+    if (!image) {
+      throw new Error('image est requis');
+    }
+    
+    try {
+      // Nettoyer la chaîne base64 (supprimer les espaces, retours à la ligne, etc.)
+      let cleanImage = image.replace(/\s/g, '');
+      
+      // Gérer le préfixe data:image/...;base64,
+      if (cleanImage.includes('data:image/') && cleanImage.includes(';base64,')) {
+        const base64Start = cleanImage.indexOf(';base64,') + 8;
+        cleanImage = cleanImage.substring(base64Start);
+        console.log('🔍 Préfixe MIME détecté et supprimé');
+      }
+      
+      // Validation de base64
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanImage)) {
+        console.error('❌ Format base64 invalide:', cleanImage.substring(0, 50) + '...');
+        throw new Error('Format base64 invalide');
+      }
+      
+      console.log('✅ Format base64 valide, longueur:', cleanImage.length);
+      
+      // Convertir le base64 en Buffer
+      const buffer = Buffer.from(cleanImage, 'base64');
+      
+      // Validation de la taille
+      if (buffer.length < 100) {
+        throw new Error('Image trop petite, données corrompues');
+      }
+      
+      if (buffer.length > 50 * 1024 * 1024) { // 50MB max
+        throw new Error('Image trop volumineuse (max 50MB)');
+      }
+      
+      console.log('📸 Buffer créé avec succès, taille:', buffer.length, 'bytes');
+      
+      return this.albumsService.updatePhoto(albumId, photoId, buffer);
+    } catch (error) {
+      if (error.message.includes('base64')) {
+        throw new Error('Format d\'image invalide. Assurez-vous que l\'image est bien encodée en base64.');
+      }
+      throw error;
+    }
+  }
+
+  // Supprimer une photo
+  @Delete(':albumId/photos/:photoId')
+  async removePhoto(
+    @Param('albumId') albumId: string,
+    @Param('photoId') photoId: string,
+  ): Promise<void> {
+    return this.albumsService.removePhoto(albumId, photoId);
+  }
+}

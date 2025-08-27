@@ -1,0 +1,30 @@
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AlbumsModule } from './albums/albums.module';
+import { json, urlencoded } from 'express';
+import { databaseConfig } from './config/database.config';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    TypeOrmModule.forRoot(databaseConfig),
+    AlbumsModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(json({ limit: '50mb' }), urlencoded({ limit: '50mb', extended: true }))
+      .forRoutes('*');
+    
+
+  }
+}
