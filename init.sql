@@ -1,11 +1,11 @@
--- Initialisation de la base de données leonnar
+-- Initialisation de la base de données leonaar
 -- Ce fichier est exécuté automatiquement lors du premier démarrage du conteneur
 
--- Créer l'utilisateur leonnar_user (optionnel)
--- CREATE USER leonnar_user WITH ENCRYPTED PASSWORD 'leonnar_password';
+-- Créer l'utilisateur leonaar_user (optionnel)
+-- CREATE USER leonaar_user WITH ENCRYPTED PASSWORD 'leonaar_password';
 
 -- Accorder les privilèges (optionnel)
--- GRANT ALL PRIVILEGES ON DATABASE leonnar TO leonnar_user;
+-- GRANT ALL PRIVILEGES ON DATABASE leonaar TO leonaar_user;
 
 -- Activer l'extension uuid-ossp pour les UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

@@ -6,6 +6,6 @@ echo ⏳ Attente du démarrage du serveur...
 timeout /t 5 /nobreak > nul
 
 echo 🌐 Démarrage du tunnel localtunnel...
-lt --port 4000 --subdomain leonnar-albums
+lt --port 4000 --subdomain leonaar-albums
 
 pause

@@ -1,6 +1,6 @@
 # 🚀 Guide de déploiement en production - VPS OVH
 
-Guide complet pour déployer l'application KinkKeep sur un VPS OVH en production.
+Guide complet pour déployer l'application leonaar sur un VPS OVH en production.
 
 ## 📋 Table des matières
 
@@ -44,11 +44,11 @@ apt install -y curl wget git unzip software-properties-common
 ### 👤 Création d'un utilisateur dédié
 ```bash
 # Créer un utilisateur pour l'application
-adduser leonnar
-usermod -aG sudo leonnar
+adduser leonaar
+usermod -aG sudo leonaar
 
-# Passer à l'utilisateur leonnar
-su - leonnar
+# Passer à l'utilisateur leonaar
+su - leonaar
 ```
 
 ---
@@ -68,7 +68,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 # Redémarrer la session pour appliquer les groupes
 exit
-ssh leonnar@VOTRE_IP_VPS
+ssh leonaar@VOTRE_IP_VPS
 ```
 
 ### 🐘 Installation de PostgreSQL (alternative à Docker)
@@ -81,8 +81,8 @@ sudo systemctl start postgresql
 sudo systemctl enable postgresql
 
 # Configuration de l'utilisateur
-sudo -u postgres createuser --interactive leonnar
-sudo -u postgres createdb leonnar
+sudo -u postgres createuser --interactive leonaar
+sudo -u postgres createdb leonaar
 ```
 
 ### 🟢 Installation de Node.js
@@ -106,11 +106,11 @@ sudo npm install -g pm2
 ### 📁 Création de la structure
 ```bash
 # Créer le dossier de l'application
-mkdir -p /home/leonnar/app
-cd /home/leonnar/app
+mkdir -p /home/leonaar/app
+cd /home/leonaar/app
 
 # Cloner votre repository (ou uploader les fichiers)
-git clone https://github.com/votre-username/leonnar-back.git .
+git clone https://github.com/777data/leonaar-api.git .
 # OU utiliser scp pour uploader les fichiers
 ```
 
@@ -121,9 +121,9 @@ cat > .env << EOF
 # Configuration de la base de données PostgreSQL
 DB_HOST=localhost
 DB_PORT=5432
-DB_USERNAME=leonnar
+DB_USERNAME=leonaar
 DB_PASSWORD=VOTRE_MOT_DE_PASSE_SECURISE
-DB_NAME=leonnar
+DB_NAME=leonaar
 
 # Configuration de l'application
 NODE_ENV=production
@@ -144,13 +144,13 @@ chmod 600 .env
 sudo -u postgres psql
 
 # Créer l'utilisateur et la base
-CREATE USER leonnar WITH ENCRYPTED PASSWORD 'VOTRE_MOT_DE_PASSE_SECURISE';
-CREATE DATABASE leonnar OWNER leonnar;
-GRANT ALL PRIVILEGES ON DATABASE leonnar TO leonnar;
+CREATE USER leonaar WITH ENCRYPTED PASSWORD 'leonaar';
+CREATE DATABASE leonaar OWNER leonaar;
+GRANT ALL PRIVILEGES ON DATABASE leonaar TO leonaar;
 \q
 
 # Tester la connexion
-psql -h localhost -U leonnar -d leonnar
+psql -h localhost -U leonaar -d leonaar
 ```
 
 ---
@@ -176,7 +176,7 @@ chmod 755 uploads
 cat > ecosystem.config.js << EOF
 module.exports = {
   apps: [{
-    name: 'leonnar-back',
+    name: 'leonaar-back',
     script: 'dist/main.js',
     instances: 'max',
     exec_mode: 'cluster',
@@ -219,18 +219,18 @@ sudo systemctl enable nginx
 ### ⚙️ Configuration du site
 ```bash
 # Créer la configuration du site
-sudo tee /etc/nginx/sites-available/leonnar << EOF
+sudo tee /etc/nginx/sites-available/leonaar << EOF
 server {
     listen 80;
     server_name VOTRE_DOMAINE.com www.VOTRE_DOMAINE.com;
 
     # Redirection des logs
-    access_log /var/log/nginx/leonnar_access.log;
-    error_log /var/log/nginx/leonnar_error.log;
+    access_log /var/log/nginx/leonaar_access.log;
+    error_log /var/log/nginx/leonaar_error.log;
 
     # Configuration des fichiers statiques
     location /uploads/ {
-        alias /home/leonnar/app/uploads/;
+        alias /home/leonaar/app/uploads/;
         expires 1y;
         add_header Cache-Control "public, immutable";
         add_header Access-Control-Allow-Origin *;
@@ -257,7 +257,7 @@ server {
 EOF
 
 # Activer le site
-sudo ln -s /etc/nginx/sites-available/leonnar /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/leonaar /etc/nginx/sites-enabled/
 
 # Tester la configuration
 sudo nginx -t
@@ -294,10 +294,10 @@ sudo crontab -e
 pm2 status
 
 # Voir les logs
-pm2 logs leonnar-back
+pm2 logs leonaar-back
 
 # Redémarrer l'application
-pm2 restart leonnar-back
+pm2 restart leonaar-back
 
 # Monitoring en temps réel
 pm2 monit
@@ -308,7 +308,7 @@ pm2 monit
 # Créer un script de déploiement
 cat > deploy.sh << 'EOF'
 #!/bin/bash
-echo "🚀 Déploiement de KinkKeep..."
+echo "🚀 Déploiement de leonaar..."
 
 # Pull des dernières modifications
 git pull origin main
@@ -320,7 +320,7 @@ npm ci --only=production
 npm run build
 
 # Redémarrage de l'application
-pm2 restart leonnar-back
+pm2 restart leonaar-back
 
 echo "✅ Déploiement terminé !"
 EOF
@@ -384,10 +384,10 @@ sudo nano /etc/postgresql/*/main/pg_hba.conf
 ### 📝 Logs et debugging
 ```bash
 # Logs de l'application
-tail -f /home/leonnar/app/logs/combined.log
+tail -f /home/leonaar/app/logs/combined.log
 
 # Logs de Nginx
-sudo tail -f /var/log/nginx/leonnar_error.log
+sudo tail -f /var/log/nginx/leonaar_error.log
 
 # Logs système
 sudo journalctl -u nginx -f
@@ -397,7 +397,7 @@ sudo journalctl -u nginx -f
 ```bash
 # Redémarrage complet
 sudo systemctl restart nginx
-pm2 restart leonnar-back
+pm2 restart leonaar-back
 
 # Vérification des services
 sudo systemctl status nginx
@@ -416,8 +416,8 @@ netstat -tlnp | grep :80
 netstat -tlnp | grep :443
 
 # Vérifier les permissions
-ls -la /home/leonnar/app/uploads/
-ls -la /home/leonnar/app/
+ls -la /home/leonaar/app/uploads/
+ls -la /home/leonaar/app/
 ```
 
 ---
@@ -468,9 +468,9 @@ ls -la /home/leonnar/app/
 ```bash
 # PM2
 pm2 start ecosystem.config.js    # Démarrer l'application
-pm2 stop leonnar-back           # Arrêter l'application
-pm2 restart leonnar-back        # Redémarrer l'application
-pm2 logs leonnar-back           # Voir les logs
+pm2 stop leonaar-back           # Arrêter l'application
+pm2 restart leonaar-back        # Redémarrer l'application
+pm2 logs leonaar-back           # Voir les logs
 pm2 monit                       # Monitoring en temps réel
 
 # Nginx
@@ -487,7 +487,7 @@ sudo -u postgres psql              # Connexion admin
 
 ## 🎯 Conclusion
 
-Ce guide vous donne tous les éléments nécessaires pour déployer votre application KinkKeep en production sur un VPS OVH. 
+Ce guide vous donne tous les éléments nécessaires pour déployer votre application leonaar en production sur un VPS OVH. 
 
 **Points clés à retenir :**
 - ✅ Configuration sécurisée des services
@@ -504,5 +504,5 @@ Ce guide vous donne tous les éléments nécessaires pour déployer votre applic
 
 ---
 
-*Documentation créée pour KinkKeep - Application de gestion d'albums photos*
+*Documentation créée pour leonaar - Application de gestion d'albums photos*
 *Dernière mise à jour : Août 2025*
