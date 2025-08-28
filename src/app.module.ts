@@ -6,6 +6,8 @@ import { AppService } from './app.service';
 import { AlbumsModule } from './albums/albums.module';
 import { json, urlencoded } from 'express';
 import { databaseConfig } from './config/database.config';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { databaseConfig } from './config/database.config';
     }),
     TypeOrmModule.forRoot(databaseConfig),
     AlbumsModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
