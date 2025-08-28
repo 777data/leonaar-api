@@ -230,10 +230,8 @@ server {
 
     # Configuration des fichiers statiques
     location /uploads/ {
-        alias /home/leonaar/app/uploads/;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        add_header Access-Control-Allow-Origin *;
+        # Désactiver l'accès direct aux fichiers
+        deny all;
     }
 
     # Proxy vers l'application NestJS

@@ -44,6 +44,21 @@ export class AlbumsService {
       console.log(`📁 Dossier de stockage créé: ${this.STORAGE_PATH}`);
     }
   }
+
+  // Méthode pour obtenir le chemin sécurisé par utilisateur
+  private getUserStoragePath(userId: string): string {
+    return path.join(process.cwd(), this.STORAGE_FOLDER, userId);
+  }
+
+  // Méthode pour obtenir le chemin d'un album spécifique
+  private getAlbumStoragePath(userId: string, albumId: string): string {
+    return path.join(this.getUserStoragePath(userId), albumId);
+  }
+
+  // Méthode pour obtenir le chemin des miniatures
+  private getThumbnailsStoragePath(userId: string, albumId: string): string {
+    return path.join(this.getAlbumStoragePath(userId, albumId), 'thumbnails');
+  }
   
   /**
    * Compresse une image en WebP avec une qualité optimisée
@@ -199,8 +214,10 @@ export class AlbumsService {
       const uniqueFileName = `photo_${timestamp}.webp`;
       const thumbnailFileName = `photo_${timestamp}.webp`;
       
-      const albumFolder = path.join(this.STORAGE_PATH, albumId);
-      const thumbnailsFolder = path.join(albumFolder, 'thumbnails');
+      const userStoragePath = this.getUserStoragePath(userId);
+      const albumFolder = this.getAlbumStoragePath(userId, albumId);
+      const thumbnailsFolder = this.getThumbnailsStoragePath(userId, albumId);
+    
       const filePath = path.join(albumFolder, uniqueFileName);
       const thumbnailPath = path.join(thumbnailsFolder, thumbnailFileName);
       
@@ -371,14 +388,14 @@ export class AlbumsService {
     
     try {
       // Supprimer le fichier principal
-      const filePath = path.join(this.STORAGE_PATH, albumId, photo.fileName);
+      const filePath = path.join(this.getAlbumStoragePath(userId, albumId), photo.fileName);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
         console.log(`🗑️ Fichier principal supprimé: ${filePath}`);
       }
       
       // Supprimer la miniature
-      const thumbnailPath = path.join(this.STORAGE_PATH, albumId, 'thumbnails', photo.thumbnailFileName);
+      const thumbnailPath = path.join(this.getThumbnailsStoragePath(userId, albumId), photo.thumbnailFileName);
       if (fs.existsSync(thumbnailPath)) {
         fs.unlinkSync(thumbnailPath);
         console.log(`🗑️ Miniature supprimée: ${thumbnailPath}`);

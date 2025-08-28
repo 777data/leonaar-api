@@ -8,6 +8,7 @@ import { json, urlencoded } from 'express';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { UploadSecurityMiddleware } from './common/middleware/upload-security.middleware';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { UsersModule } from './users/users.module';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(json({ limit: '50mb' }), urlencoded({ limit: '50mb', extended: true }))
+      .apply(UploadSecurityMiddleware)
       .forRoutes('*');
     
 

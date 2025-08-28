@@ -9,7 +9,11 @@ import {
   Query,
   UseGuards,
   Request,
+  Res,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { AlbumsService } from './albums.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
@@ -18,6 +22,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { Album } from './interfaces/album.interface';
 import type { Photo } from './interfaces/photo.interface';
 import type { PhotosResponse, PhotosThumbnailsResponse } from './interfaces/photos-response.interface';
+import * as fs from 'fs'; 
+import * as path from 'path'; 
 
 @Controller('albums')
 @UseGuards(JwtAuthGuard)
@@ -206,5 +212,34 @@ export class AlbumsController {
     @Param('photoId') photoId: string,
   ): Promise<void> {
     return this.albumsService.removePhoto(req.user.id, albumId, photoId);
+  }
+
+  @Get('uploads/:userId/:albumId/:filename')
+  @UseGuards(JwtAuthGuard)
+  async serveImage(
+    @Param('userId') userId: string,
+    @Param('albumId') albumId: string,
+    @Param('filename') filename: string,
+    @Request() req,
+    @Res() res: Response
+  ) {
+    // Vérifier que l'utilisateur accède à ses propres fichiers
+    if (req.user.id !== userId) {
+      throw new ForbiddenException('Accès non autorisé');
+    }
+    
+    // Vérifier que l'album appartient à l'utilisateur
+    await this.albumsService.findOne(userId, albumId);
+    
+    // Construire le chemin du fichier
+    const filePath = path.join(process.cwd(), 'uploads', userId, albumId, filename);
+    
+    // Vérifier que le fichier existe
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException('Fichier non trouvé');
+    }
+    
+    // Servir le fichier
+    res.sendFile(filePath);
   }
 }
