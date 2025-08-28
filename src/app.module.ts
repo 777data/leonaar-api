@@ -15,7 +15,8 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot(databaseConfig)
+    TypeOrmModule.forRoot(databaseConfig),
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
