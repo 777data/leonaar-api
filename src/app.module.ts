@@ -29,11 +29,7 @@ import { UploadAccessGuard } from './common/guards/upload-access.guard';
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
-    {
-      provide: APP_GUARD,
-      useClass: UploadAccessGuard,
-    }],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
