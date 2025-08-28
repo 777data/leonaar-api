@@ -8,10 +8,6 @@ import { json, urlencoded } from 'express';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { JwtModule } from '@nestjs/jwt';
-import { envConfig } from './config/env.config';
-import { APP_GUARD } from '@nestjs/core';
-import { UploadAccessGuard } from './common/guards/upload-access.guard';
 
 @Module({
   imports: [
@@ -20,10 +16,6 @@ import { UploadAccessGuard } from './common/guards/upload-access.guard';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRoot(databaseConfig),
-    JwtModule.register({
-      secret: envConfig.jwt.secret,
-      signOptions: { expiresIn: '24h' },
-    }),
     AlbumsModule,
     AuthModule,
     UsersModule,
