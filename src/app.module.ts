@@ -17,6 +17,8 @@ import { UsersModule } from './users/users.module';
     }),
     TypeOrmModule.forRoot(databaseConfig),
     UsersModule,
+    AuthModule,
+    AlbumsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
