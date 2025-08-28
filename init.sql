@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS albums (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     "coverImage" VARCHAR(500),
+    "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE
 );
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS photos (
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE,
     "albumId" UUID NOT NULL REFERENCES albums(id) ON DELETE CASCADE
+    "userId" UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Créer les index pour améliorer les performances
@@ -41,3 +43,5 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_albums_title ON albums(title);
 CREATE INDEX IF NOT EXISTS idx_photos_album_id ON photos("albumId");
 CREATE INDEX IF NOT EXISTS idx_photos_created_at ON photos("createdAt");
+CREATE INDEX IF NOT EXISTS idx_albums_user_id ON albums("userId");
+CREATE INDEX IF NOT EXISTS idx_photos_user_id ON photos("userId");

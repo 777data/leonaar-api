@@ -129,29 +129,32 @@ export class AlbumsService {
   
 
 
-  async create(createAlbumDto: CreateAlbumDto): Promise<Album> {
+  async create(userId: string,createAlbumDto: CreateAlbumDto): Promise<Album> {
     const album = this.albumRepository.create({
       ...createAlbumDto,
-      coverImage: createAlbumDto.image, // Garde la compatibilité
+      userId
     });
     
     return await this.albumRepository.save(album);
   }
 
-  async findAll(): Promise<Album[]> {
-    return await this.albumRepository.find();
+  async findAll(userId: string): Promise<Album[]> {
+    return this.albumRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
-  async findOne(id: string): Promise<Album> {
-    const album = await this.albumRepository.findOne({ where: { id } });
+  async findOne(userId: string, id: string): Promise<Album> {
+    const album = await this.albumRepository.findOne({ where: { userId, id } });
     if (!album) {
       throw new NotFoundException(`Album with ID ${id} not found`);
     }
     return album;
   }
 
-  async update(id: string, updateAlbumDto: UpdateAlbumDto): Promise<Album> {
-    const album = await this.findOne(id);
+  async update(userId: string, id: string, updateAlbumDto: UpdateAlbumDto): Promise<Album> {
+    const album = await this.findOne(userId, id);
     
     Object.assign(album, updateAlbumDto);
     album.updatedAt = new Date();
@@ -159,17 +162,17 @@ export class AlbumsService {
     return await this.albumRepository.save(album);
   }
 
-  async remove(id: string): Promise<void> {
-    const album = await this.findOne(id);
+  async remove(userId: string, id: string): Promise<void> {
+    const album = await this.findOne(userId, id);
     await this.albumRepository.remove(album);
   }
 
   // === MÉTHODES POUR LES PHOTOS ===
 
   // Ajouter une photo à un album
-  async addPhoto(albumId: string, imageFile: Buffer): Promise<Photo> {
+  async addPhoto(userId: string, albumId: string, imageFile: Buffer): Promise<Photo> {
     // Vérifier que l'album existe
-    await this.findOne(albumId);
+    await this.findOne(userId, albumId);
     
     // Validation que nous avons bien un fichier image
     if (!imageFile || (imageFile instanceof Buffer && imageFile.length === 0)) {
@@ -240,9 +243,9 @@ export class AlbumsService {
   }
 
   // Récupérer toutes les photos d'un album (avec images complètes)
-  async getAlbumPhotos(albumId: string, limit?: number, offset: number = 0, order: 'asc' | 'desc' = 'desc'): Promise<PhotosResponse> {
+  async getAlbumPhotos(userId: string, albumId: string, limit?: number, offset: number = 0, order: 'asc' | 'desc' = 'desc'): Promise<PhotosResponse> {
     // Vérifier que l'album existe
-    await this.findOne(albumId);
+    await this.findOne(userId, albumId);
     
     // Construire la requête avec TypeORM
     const queryBuilder = this.photoRepository
@@ -271,9 +274,9 @@ export class AlbumsService {
   }
   
   // Récupérer uniquement les miniatures des photos d'un album (pour les listes)
-  async getAlbumPhotoThumbnails(albumId: string, limit?: number, offset: number = 0, order: 'asc' | 'desc' = 'desc'): Promise<PhotosThumbnailsResponse> {
+  async getAlbumPhotoThumbnails(userId: string, albumId: string, limit?: number, offset: number = 0, order: 'asc' | 'desc' = 'desc'): Promise<PhotosThumbnailsResponse> {
     // Vérifier que l'album existe
-    await this.findOne(albumId);
+    await this.findOne(userId, albumId);
     
     // Construire la requête avec TypeORM
     const queryBuilder = this.photoRepository
@@ -312,9 +315,9 @@ export class AlbumsService {
   }
 
   // Récupérer une photo spécifique
-  async getPhoto(albumId: string, photoId: string): Promise<Photo> {
+  async getPhoto(userId: string, albumId: string, photoId: string): Promise<Photo> {
     // Vérifier que l'album existe
-    await this.findOne(albumId);
+    await this.findOne(userId, albumId);
     
     const photo = await this.photoRepository.findOne({ 
       where: { id: photoId, albumId } 
@@ -328,8 +331,8 @@ export class AlbumsService {
   }
 
   // Mettre à jour une photo
-  async updatePhoto(albumId: string, photoId: string, imageFile: Buffer): Promise<Photo> {
-    const photo = this.getPhoto(albumId, photoId);
+  async updatePhoto(userId: string, albumId: string, photoId: string, imageFile: Buffer): Promise<Photo> {
+    const photo = this.getPhoto(userId, albumId, photoId);
     
     // Validation que nous avons bien un fichier image
     if (!imageFile || (imageFile instanceof Buffer && imageFile.length === 0)) {
@@ -338,10 +341,10 @@ export class AlbumsService {
     
     try {
       // Supprimer l'ancienne image et sa miniature
-      await this.removePhoto(albumId, photoId);
+      await this.removePhoto(userId, albumId, photoId);
       
       // Ajouter la nouvelle image (avec nouvelle miniature)
-      const newPhoto = await this.addPhoto(albumId, imageFile);
+      const newPhoto = await this.addPhoto(userId, albumId, imageFile);
       
       // Mettre à jour l'ID pour garder la cohérence
       newPhoto.id = photoId;
@@ -353,9 +356,9 @@ export class AlbumsService {
   }
 
     // Supprimer une photo
-  async removePhoto(albumId: string, photoId: string): Promise<void> {
+  async removePhoto(userId: string, albumId: string, photoId: string): Promise<void> {
     // Vérifier que l'album existe
-    await this.findOne(albumId);
+    await this.findOne(userId, albumId);
     
     const photo = await this.photoRepository.findOne({ 
       where: { id: photoId, albumId } 

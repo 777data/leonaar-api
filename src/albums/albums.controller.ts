@@ -7,42 +7,46 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { AlbumsService } from './albums.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 import type { Album } from './interfaces/album.interface';
 import type { Photo } from './interfaces/photo.interface';
 import type { PhotosResponse, PhotosThumbnailsResponse } from './interfaces/photos-response.interface';
 
 @Controller('albums')
+@UseGuards(JwtAuthGuard)
 export class AlbumsController {
   constructor(private readonly albumsService: AlbumsService) {}
 
   @Post()
-  async create(@Body() createAlbumDto: CreateAlbumDto): Promise<Album> {
-    return await this.albumsService.create(createAlbumDto);
+  async create(@Request() req, @Body() createAlbumDto: CreateAlbumDto): Promise<Album> {
+    return await this.albumsService.create(req.user.id, createAlbumDto);
   }
 
   @Get()
-  async findAll(): Promise<Album[]> {
-    return await this.albumsService.findAll();
+  async findAll(@Request() req): Promise<Album[]> {
+    return await this.albumsService.findAll(req.user.id);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Album> {
-    return await this.albumsService.findOne(id);
+  async findOne(@Request() req, @Param('id') id: string): Promise<Album> {
+    return await this.albumsService.findOne(req.user.id, id);
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto): Promise<Album> {
-    return await this.albumsService.update(id, updateAlbumDto);
+  async update(@Request() req, @Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto): Promise<Album> {
+    return await this.albumsService.update(req.user.id, id, updateAlbumDto);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
-    return await this.albumsService.remove(id);
+  async remove(@Request() req, @Param('id') id: string): Promise<void> {
+    return await this.albumsService.remove(req.user.id, id);
   }
 
   // === ENDPOINTS POUR LES PHOTOS ===
@@ -50,6 +54,7 @@ export class AlbumsController {
   // Récupérer toutes les photos d'un album (avec images complètes)
   @Get(':id/photos')
   async getAlbumPhotos(
+    @Request() req,
     @Param('id') albumId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
@@ -58,12 +63,13 @@ export class AlbumsController {
     const maxPhotos = limit ? parseInt(limit, 10) : undefined;
     const offsetValue = offset ? parseInt(offset, 10) : 0;
     const sortOrder = order === 'asc' ? 'asc' : 'desc'; // Par défaut: desc (plus récentes en premier)
-    return await this.albumsService.getAlbumPhotos(albumId, maxPhotos, offsetValue, sortOrder);
+    return await this.albumsService.getAlbumPhotos(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
   }
   
   // Récupérer uniquement les miniatures des photos d'un album (pour les listes)
   @Get(':id/photos/thumbnails')
   async getAlbumPhotoThumbnails(
+    @Request() req,
     @Param('id') albumId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
@@ -72,21 +78,23 @@ export class AlbumsController {
     const maxPhotos = limit ? parseInt(limit, 10) : undefined;
     const offsetValue = offset ? parseInt(offset, 10) : 0;
     const sortOrder = order === 'asc' ? 'asc' : 'desc'; // Par défaut: desc (plus récentes en premier)
-    return await this.albumsService.getAlbumPhotoThumbnails(albumId, maxPhotos, offsetValue, sortOrder);
+    return await this.albumsService.getAlbumPhotoThumbnails(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
   }
 
   // Récupérer une photo spécifique
   @Get(':albumId/photos/:photoId')
   async getPhoto(
+    @Request() req,
     @Param('albumId') albumId: string,
     @Param('photoId') photoId: string,
   ): Promise<Photo> {
-    return await this.albumsService.getPhoto(albumId, photoId);
+    return await this.albumsService.getPhoto(req.user.id, albumId, photoId);
   }
 
   // Ajouter une photo à un album
   @Post(':id/photos')
   async addPhoto(
+    @Request() req,
     @Param('id') albumId: string,
     @Body('image') image: string, // Base64 ou données binaires
   ): Promise<Photo> {
@@ -127,7 +135,7 @@ export class AlbumsController {
       
       console.log('📸 Buffer créé avec succès, taille:', buffer.length, 'bytes');
       
-      return this.albumsService.addPhoto(albumId, buffer);
+      return this.albumsService.addPhoto(req.user.id, albumId, buffer);
     } catch (error) {
       if (error.message.includes('base64')) {
         throw new Error('Format d\'image invalide. Assurez-vous que l\'image est bien encodée en base64.');
@@ -139,6 +147,7 @@ export class AlbumsController {
   // Mettre à jour une photo
   @Patch(':albumId/photos/:photoId')
   async updatePhoto(
+    @Request() req,
     @Param('albumId') albumId: string,
     @Param('photoId') photoId: string,
     @Body('image') image: string,
@@ -180,7 +189,7 @@ export class AlbumsController {
       
       console.log('📸 Buffer créé avec succès, taille:', buffer.length, 'bytes');
       
-      return this.albumsService.updatePhoto(albumId, photoId, buffer);
+      return this.albumsService.updatePhoto(req.user.id, albumId, photoId, buffer);
     } catch (error) {
       if (error.message.includes('base64')) {
         throw new Error('Format d\'image invalide. Assurez-vous que l\'image est bien encodée en base64.');
@@ -192,9 +201,10 @@ export class AlbumsController {
   // Supprimer une photo
   @Delete(':albumId/photos/:photoId')
   async removePhoto(
+    @Request() req,
     @Param('albumId') albumId: string,
     @Param('photoId') photoId: string,
   ): Promise<void> {
-    return this.albumsService.removePhoto(albumId, photoId);
+    return this.albumsService.removePhoto(req.user.id, albumId, photoId);
   }
 }

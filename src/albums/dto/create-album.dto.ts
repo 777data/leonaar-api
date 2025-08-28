@@ -1,5 +1,14 @@
+import { IsString, IsOptional } from 'class-validator';
+
 export class CreateAlbumDto {
+  @IsString()
   title: string;
-  description: string;
-  image: string; // Garde la compatibilité, sera mappé vers coverImage
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImage?: string;
 }

@@ -1,31 +1,34 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 import { Photo } from './photo.entity';
 
 @Entity('albums')
-@Index(['title']) // Index sur le titre pour les recherches
 export class Album {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column()
   title: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ nullable: true })
   description: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ nullable: true })
   coverImage: string;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @Column()
+  userId: string; // Propriétaire de l'album
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @OneToMany(() => Photo, photo => photo.album)
+  photos: Photo[];
+
+  @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
+  @UpdateDateColumn()
   updatedAt: Date;
-
-  // Relation avec les photos
-  @OneToMany(() => Photo, photo => photo.album, { 
-    cascade: true,
-    onDelete: 'CASCADE' // Supprime les photos si l'album est supprimé
-  })
-  photos: Photo[];
 }
