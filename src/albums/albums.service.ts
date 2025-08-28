@@ -228,6 +228,7 @@ export class AlbumsService {
       
       // Créer l'entité Photo avec TypeORM
       const photo = this.photoRepository.create({
+        userId: userId,
         imageUrl: imageUrl,
         thumbnailUrl: thumbnailUrl,
         fileName: uniqueFileName,
