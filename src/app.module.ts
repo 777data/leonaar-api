@@ -27,9 +27,9 @@ import { UploadSecurityMiddleware } from './common/middleware/upload-security.mi
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
+      .apply(json({ limit: '50mb' }), urlencoded({ limit: '50mb', extended: true }))
+      .forRoutes('*')
       .apply(UploadSecurityMiddleware)
-      .forRoutes('*');
-    
-
+      .forRoutes('/uploads/*');
   }
 }
