@@ -8,9 +8,10 @@ import { json, urlencoded } from 'express';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { UploadSecurityMiddleware } from './common/middleware/upload-security.middleware';
 import { JwtModule } from '@nestjs/jwt';
 import { envConfig } from './config/env.config';
+import { APP_GUARD } from '@nestjs/core';
+import { UploadAccessGuard } from './common/guards/upload-access.guard';
 
 @Module({
   imports: [
@@ -28,16 +29,16 @@ import { envConfig } from './config/env.config';
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService, UploadSecurityMiddleware],
+  providers: [AppService,
+    {
+      provide: APP_GUARD,
+      useClass: UploadAccessGuard,
+    }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(json({ limit: '50mb' }), urlencoded({ limit: '50mb', extended: true }))
       .forRoutes('*');
-
-    consumer
-      .apply(UploadSecurityMiddleware)
-      .forRoutes('/uploads/*');
   }
 }
