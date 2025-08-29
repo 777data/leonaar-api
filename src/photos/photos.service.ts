@@ -11,7 +11,7 @@ import sharp from 'sharp';
 @Injectable()
 export class PhotosService {
   // Configuration du stockage local
-  private readonly STORAGE_FOLDER = 'uploads';
+  private readonly STORAGE_FOLDER = 'albums';
   private readonly STORAGE_PATH = path.join(process.cwd(), this.STORAGE_FOLDER);
   
   // Configuration de la compression
@@ -204,8 +204,8 @@ export class PhotosService {
       }
       
       // Générer les URLs locales
-      const imageUrl = `/uploads/${albumId}/${uniqueFileName}`;
-      const thumbnailUrl = `/uploads/${albumId}/thumbnails/${thumbnailFileName}`;
+      const imageUrl = `/albums/${albumId}/${uniqueFileName}`;
+      const thumbnailUrl = `/albums/${albumId}/thumbnails/${thumbnailFileName}`;
       
       // Créer l'entité Photo avec TypeORM
       const photo = this.photoRepository.create({

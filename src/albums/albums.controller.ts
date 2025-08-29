@@ -203,7 +203,7 @@ export class AlbumsController {
   }
 
   // Servir les images (endpoint pour récupérer les fichiers)
-  @Get('uploads/:userId/:albumId/:filename')
+  @Get('albums/:userId/:albumId/:filename')
   @UseGuards(JwtAuthGuard)
   async serveImage(
     @Param('userId') userId: string,
@@ -221,7 +221,7 @@ export class AlbumsController {
     await this.albumsService.findOne(userId, albumId);
     
     // Construire le chemin du fichier
-    const filePath = path.join(process.cwd(), 'uploads', userId, albumId, filename);
+    const filePath = path.join(process.cwd(), 'albums', userId, albumId, filename);
     
     // Vérifier que le fichier existe
     if (!fs.existsSync(filePath)) {
@@ -233,7 +233,7 @@ export class AlbumsController {
   }
 
   // Servir les miniatures
-  @Get('uploads/:userId/:albumId/thumbnails/:filename')
+  @Get('albums/:userId/:albumId/thumbnails/:filename')
   @UseGuards(JwtAuthGuard)
   async serveThumbnail(
     @Param('userId') userId: string,
@@ -251,7 +251,7 @@ export class AlbumsController {
     await this.albumsService.findOne(userId, albumId);
     
     // Construire le chemin du fichier miniature
-    const filePath = path.join(process.cwd(), 'uploads', userId, albumId, 'thumbnails', filename);
+    const filePath = path.join(process.cwd(), 'albums', userId, albumId, 'thumbnails', filename);
     
     // Vérifier que le fichier existe
     if (!fs.existsSync(filePath)) {

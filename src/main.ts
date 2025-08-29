@@ -29,6 +29,6 @@ async function bootstrap() {
   await app.listen(port, host);
   console.log(`🚀 Application démarrée sur http://localhost:${port}`);
   console.log(`🖼️ Limite de taille des images : 50MB`);
-  console.log(`📁 Images stockées dans: ${require('path').join(process.cwd(), 'uploads')}`);
+  console.log(`📁 Images stockées dans: ${require('path').join(process.cwd(), 'albums')}`);
 }
 bootstrap();
