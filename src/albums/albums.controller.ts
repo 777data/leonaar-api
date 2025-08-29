@@ -13,22 +13,25 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { AlbumsService } from './albums.service';
+import { PhotosService } from '../photos/photos.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-
 import type { Album } from './interfaces/album.interface';
-import type { Photo } from './interfaces/photo.interface';
-import type { PhotosResponse, PhotosThumbnailsResponse } from './interfaces/photos-response.interface';
+import type { Photo } from '../photos/entities/photo.entity';
+import type { PhotosResponse, PhotosThumbnailsResponse } from '../photos/interfaces/photos-response.interface';
 import * as fs from 'fs'; 
 import * as path from 'path'; 
 
 @Controller('albums')
 @UseGuards(JwtAuthGuard)
 export class AlbumsController {
-  constructor(private readonly albumsService: AlbumsService) {}
+  constructor(
+    private readonly albumsService: AlbumsService,
+    private readonly photosService: PhotosService,
+  ) {}
 
   @Post()
   async create(@Request() req, @Body() createAlbumDto: CreateAlbumDto): Promise<Album> {
@@ -57,23 +60,8 @@ export class AlbumsController {
 
   // === ENDPOINTS POUR LES PHOTOS ===
 
-  // Récupérer toutes les photos d'un album (avec images complètes)
+  // Récupérer les miniatures des photos d'un album (pour les listes)
   @Get(':id/photos')
-  async getAlbumPhotos(
-    @Request() req,
-    @Param('id') albumId: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
-    @Query('order') order?: 'asc' | 'desc',
-  ): Promise<PhotosResponse> {
-    const maxPhotos = limit ? parseInt(limit, 10) : undefined;
-    const offsetValue = offset ? parseInt(offset, 10) : 0;
-    const sortOrder = order === 'asc' ? 'asc' : 'desc'; // Par défaut: desc (plus récentes en premier)
-    return await this.albumsService.getAlbumPhotos(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
-  }
-  
-  // Récupérer uniquement les miniatures des photos d'un album (pour les listes)
-  @Get(':id/photos/thumbnails')
   async getAlbumPhotoThumbnails(
     @Request() req,
     @Param('id') albumId: string,
@@ -84,17 +72,17 @@ export class AlbumsController {
     const maxPhotos = limit ? parseInt(limit, 10) : undefined;
     const offsetValue = offset ? parseInt(offset, 10) : 0;
     const sortOrder = order === 'asc' ? 'asc' : 'desc'; // Par défaut: desc (plus récentes en premier)
-    return await this.albumsService.getAlbumPhotoThumbnails(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
+    return await this.photosService.getAlbumPhotoThumbnails(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
   }
 
-  // Récupérer une photo spécifique
+  // Récupérer une photo spécifique (taille réelle)
   @Get(':albumId/photos/:photoId')
   async getPhoto(
     @Request() req,
     @Param('albumId') albumId: string,
     @Param('photoId') photoId: string,
   ): Promise<Photo> {
-    return await this.albumsService.getPhoto(req.user.id, albumId, photoId);
+    return await this.photosService.getPhoto(req.user.id, albumId, photoId);
   }
 
   // Ajouter une photo à un album
@@ -141,7 +129,7 @@ export class AlbumsController {
       
       console.log('📸 Buffer créé avec succès, taille:', buffer.length, 'bytes');
       
-      return this.albumsService.addPhoto(req.user.id, albumId, buffer);
+      return this.photosService.addPhoto(req.user.id, albumId, buffer);
     } catch (error) {
       if (error.message.includes('base64')) {
         throw new Error('Format d\'image invalide. Assurez-vous que l\'image est bien encodée en base64.');
@@ -195,7 +183,7 @@ export class AlbumsController {
       
       console.log('📸 Buffer créé avec succès, taille:', buffer.length, 'bytes');
       
-      return this.albumsService.updatePhoto(req.user.id, albumId, photoId, buffer);
+      return this.photosService.updatePhoto(req.user.id, albumId, photoId, buffer);
     } catch (error) {
       if (error.message.includes('base64')) {
         throw new Error('Format d\'image invalide. Assurez-vous que l\'image est bien encodée en base64.');
@@ -211,9 +199,10 @@ export class AlbumsController {
     @Param('albumId') albumId: string,
     @Param('photoId') photoId: string,
   ): Promise<void> {
-    return this.albumsService.removePhoto(req.user.id, albumId, photoId);
+    return this.photosService.removePhoto(req.user.id, albumId, photoId);
   }
 
+  // Servir les images (endpoint pour récupérer les fichiers)
   @Get('uploads/:userId/:albumId/:filename')
   @UseGuards(JwtAuthGuard)
   async serveImage(
@@ -233,6 +222,36 @@ export class AlbumsController {
     
     // Construire le chemin du fichier
     const filePath = path.join(process.cwd(), 'uploads', userId, albumId, filename);
+    
+    // Vérifier que le fichier existe
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException('Fichier non trouvé');
+    }
+    
+    // Servir le fichier
+    res.sendFile(filePath);
+  }
+
+  // Servir les miniatures
+  @Get('uploads/:userId/:albumId/thumbnails/:filename')
+  @UseGuards(JwtAuthGuard)
+  async serveThumbnail(
+    @Param('userId') userId: string,
+    @Param('albumId') albumId: string,
+    @Param('filename') filename: string,
+    @Request() req,
+    @Res() res: Response
+  ) {
+    // Vérifier que l'utilisateur accède à ses propres fichiers
+    if (req.user.id !== userId) {
+      throw new ForbiddenException('Accès non autorisé');
+    }
+    
+    // Vérifier que l'album appartient à l'utilisateur
+    await this.albumsService.findOne(userId, albumId);
+    
+    // Construire le chemin du fichier miniature
+    const filePath = path.join(process.cwd(), 'uploads', userId, albumId, 'thumbnails', filename);
     
     // Vérifier que le fichier existe
     if (!fs.existsSync(filePath)) {

@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Photo } from './photo.entity';
+import { Photo } from '../../photos/entities/photo.entity';
 
 @Entity('albums')
 export class Album {
