@@ -18,12 +18,6 @@ export class Photo {
   @Column()
   thumbnailUrl: string;
 
-  @Column()
-  fileName: string;
-
-  @Column()
-  thumbnailFileName: string;
-
   @CreateDateColumn()
   createdAt: Date;
 

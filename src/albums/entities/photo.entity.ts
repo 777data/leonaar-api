@@ -14,12 +14,6 @@ export class Photo {
   thumbnailUrl: string;
 
   @Column()
-  fileName: string;
-
-  @Column()
-  thumbnailFileName: string;
-
-  @Column()
   albumId: string;
 
   @Column()

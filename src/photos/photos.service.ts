@@ -212,8 +212,6 @@ export class PhotosService {
         userId: userId,
         imageUrl: imageUrl,
         thumbnailUrl: thumbnailUrl,
-        fileName: uniqueFileName,
-        thumbnailFileName: thumbnailFileName,
         albumId: albumId,
       });
       
@@ -310,18 +308,24 @@ export class PhotosService {
     }
     
     try {
-      // Supprimer le fichier principal
-      const filePath = path.join(this.getAlbumStoragePath(userId, albumId), photo.fileName);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        console.log(`🗑️ Fichier principal supprimé: ${filePath}`);
+      // Extraire le nom du fichier à partir de l'URL de l'image
+      const fileName = photo.imageUrl.split('/').pop();
+      if (fileName) {
+        const filePath = path.join(this.getAlbumStoragePath(userId, albumId), fileName);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          console.log(`🗑️ Fichier principal supprimé: ${filePath}`);
+        }
       }
       
-      // Supprimer la miniature
-      const thumbnailPath = path.join(this.getThumbnailsStoragePath(userId, albumId), photo.thumbnailFileName);
-      if (fs.existsSync(thumbnailPath)) {
-        fs.unlinkSync(thumbnailPath);
-        console.log(`🗑️ Miniature supprimée: ${thumbnailPath}`);
+      // Extraire le nom du fichier à partir de l'URL de la miniature
+      const thumbnailFileName = photo.thumbnailUrl.split('/').pop();
+      if (thumbnailFileName) {
+        const thumbnailPath = path.join(this.getThumbnailsStoragePath(userId, albumId), thumbnailFileName);
+        if (fs.existsSync(thumbnailPath)) {
+          fs.unlinkSync(thumbnailPath);
+          console.log(`🗑️ Miniature supprimée: ${thumbnailPath}`);
+        }
       }
       
       // Supprimer de la base de données
