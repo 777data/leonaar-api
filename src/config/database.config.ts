@@ -1,6 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { Album } from '../albums/entities/album.entity';
-import { Photo } from '../albums/entities/photo.entity';
+import { Photo } from '../photos/entities/photo.entity';
 import { User } from '../users/entities/user.entity';
 import { envConfig } from './env.config';
 

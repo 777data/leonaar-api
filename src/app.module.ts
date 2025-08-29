@@ -6,6 +6,9 @@ import { databaseConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AlbumsModule } from './albums/albums.module';
+import { Photo } from './photos/entities/photo.entity';
+import { Album } from './albums/entities/album.entity';
+import { User } from './users/entities/user.entity';
 
 @Module({
   imports: [
@@ -13,7 +16,10 @@ import { AlbumsModule } from './albums/albums.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot(databaseConfig),
+    TypeOrmModule.forRoot({
+      ...databaseConfig,
+      entities: [User, Album, Photo],
+    }),
     UsersModule,
     AuthModule,
     AlbumsModule,
