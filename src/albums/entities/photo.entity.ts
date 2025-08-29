@@ -8,12 +8,6 @@ export class Photo {
   id: string;
 
   @Column()
-  imageUrl: string;
-
-  @Column()
-  thumbnailUrl: string;
-
-  @Column()
   albumId: string;
 
   @Column()

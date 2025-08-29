@@ -12,12 +12,6 @@ export class Photo {
   @Column()
   albumId: string;
 
-  @Column()
-  imageUrl: string;
-
-  @Column()
-  thumbnailUrl: string;
-
   @CreateDateColumn()
   createdAt: Date;
 

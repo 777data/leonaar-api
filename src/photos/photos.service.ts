@@ -57,6 +57,26 @@ export class PhotosService {
     return path.join(this.getAlbumStoragePath(userId, albumId), 'thumbnails');
   }
 
+  // Méthode pour construire l'URL de l'image
+  private buildImageUrl(albumId: string, photoId: string): string {
+    return `/albums/${albumId}/${photoId}.webp`;
+  }
+
+  // Méthode pour construire l'URL de la miniature
+  private buildThumbnailUrl(albumId: string, photoId: string): string {
+    return `/albums/${albumId}/thumbnails/${photoId}.webp`;
+  }
+
+  // Méthode pour obtenir le chemin du fichier sur le disque
+  private getImageFilePath(userId: string, albumId: string, photoId: string): string {
+    return path.join(this.getAlbumStoragePath(userId, albumId), `${photoId}.webp`);
+  }
+
+  // Méthode pour obtenir le chemin de la miniature sur le disque
+  private getThumbnailFilePath(userId: string, albumId: string, photoId: string): string {
+    return path.join(this.getThumbnailsStoragePath(userId, albumId), `${photoId}.webp`);
+  }
+
   // Vérifier que l'album existe et appartient à l'utilisateur
   private async verifyAlbumOwnership(userId: string, albumId: string): Promise<Album> {
     const album = await this.albumRepository.findOne({ where: { userId, id: albumId } });
@@ -167,25 +187,29 @@ export class PhotosService {
         throw new Error('Fichier image trop petit, données corrompues');
       }
       
+      // Créer d'abord l'entité Photo pour obtenir l'ID
+      const photo = this.photoRepository.create({
+        userId: userId,
+        albumId: albumId,
+      });
+      
+      // Sauvegarder pour obtenir l'ID généré
+      const savedPhoto = await this.photoRepository.save(photo);
+      
       // Compresser l'image en WebP
       const compressedImage = await this.compressImage(imageFile);
       
       // Générer la miniature
       const thumbnailImage = await this.generateThumbnail(imageFile);
       
-      // Générer un nom de fichier unique avec timestamp
-      const timestamp = Date.now();
-      const uniqueFileName = `photo_${timestamp}.webp`;
-      const thumbnailFileName = `photo_${timestamp}.webp`;
-      
-      const userStoragePath = this.getUserStoragePath(userId);
-      const albumFolder = this.getAlbumStoragePath(userId, albumId);
-      const thumbnailsFolder = this.getThumbnailsStoragePath(userId, albumId);
-    
-      const filePath = path.join(albumFolder, uniqueFileName);
-      const thumbnailPath = path.join(thumbnailsFolder, thumbnailFileName);
+      // Utiliser l'ID de la photo comme nom de fichier
+      const filePath = this.getImageFilePath(userId, albumId, savedPhoto.id);
+      const thumbnailPath = this.getThumbnailFilePath(userId, albumId, savedPhoto.id);
       
       // Créer les dossiers s'ils n'existent pas
+      const albumFolder = this.getAlbumStoragePath(userId, albumId);
+      const thumbnailsFolder = this.getThumbnailsStoragePath(userId, albumId);
+      
       if (!fs.existsSync(albumFolder)) {
         fs.mkdirSync(albumFolder, { recursive: true });
       }
@@ -200,23 +224,12 @@ export class PhotosService {
         console.log(`💾 Image compressée sauvegardée: ${filePath}`);
         console.log(`🖼️ Miniature sauvegardée: ${thumbnailPath}`);
       } catch (error) {
+        // En cas d'erreur de sauvegarde, supprimer l'entité créée
+        await this.photoRepository.remove(savedPhoto);
         throw new Error(`Erreur lors de la sauvegarde: ${error.message}`);
       }
       
-      // Générer les URLs locales
-      const imageUrl = `/albums/${albumId}/${uniqueFileName}`;
-      const thumbnailUrl = `/albums/${albumId}/thumbnails/${thumbnailFileName}`;
-      
-      // Créer l'entité Photo avec TypeORM
-      const photo = this.photoRepository.create({
-        userId: userId,
-        imageUrl: imageUrl,
-        thumbnailUrl: thumbnailUrl,
-        albumId: albumId,
-      });
-      
-      // Sauvegarder en base de données
-      return await this.photoRepository.save(photo);
+      return savedPhoto;
     } catch (error) {
       throw new Error(`Erreur lors de l'ajout de la photo: ${error.message}`);
     }
@@ -308,24 +321,18 @@ export class PhotosService {
     }
     
     try {
-      // Extraire le nom du fichier à partir de l'URL de l'image
-      const fileName = photo.imageUrl.split('/').pop();
-      if (fileName) {
-        const filePath = path.join(this.getAlbumStoragePath(userId, albumId), fileName);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-          console.log(`🗑️ Fichier principal supprimé: ${filePath}`);
-        }
+      // Supprimer le fichier principal
+      const filePath = this.getImageFilePath(userId, albumId, photo.id);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`🗑️ Fichier principal supprimé: ${filePath}`);
       }
       
-      // Extraire le nom du fichier à partir de l'URL de la miniature
-      const thumbnailFileName = photo.thumbnailUrl.split('/').pop();
-      if (thumbnailFileName) {
-        const thumbnailPath = path.join(this.getThumbnailsStoragePath(userId, albumId), thumbnailFileName);
-        if (fs.existsSync(thumbnailPath)) {
-          fs.unlinkSync(thumbnailPath);
-          console.log(`🗑️ Miniature supprimée: ${thumbnailPath}`);
-        }
+      // Supprimer la miniature (même nom de fichier mais dans le dossier thumbnails)
+      const thumbnailPath = this.getThumbnailFilePath(userId, albumId, photo.id);
+      if (fs.existsSync(thumbnailPath)) {
+        fs.unlinkSync(thumbnailPath);
+        console.log(`🗑️ Miniature supprimée: ${thumbnailPath}`);
       }
       
       // Supprimer de la base de données
