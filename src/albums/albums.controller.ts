@@ -61,10 +61,10 @@ export class AlbumsController {
   // === ENDPOINTS POUR LES PHOTOS ===
 
   // Récupérer toutes les photos d'un album (avec toutes les informations)
-  @Get(':id/photos')
+  @Get(':albumId/photos')
   async getAlbumPhotos(
     @Request() req,
-    @Param('id') albumId: string,
+    @Param('albumId') albumId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
     @Query('order') order?: 'asc' | 'desc',
@@ -75,14 +75,38 @@ export class AlbumsController {
     return await this.photosService.getAlbumPhotos(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
   }
 
-  // Récupérer une photo spécifique (taille réelle)
+  // Récupérer une photo spécifique (retourne l'image elle-même)
   @Get(':albumId/photos/:photoId')
   async getPhoto(
     @Request() req,
     @Param('albumId') albumId: string,
     @Param('photoId') photoId: string,
-  ): Promise<Photo> {
-    return await this.photosService.getPhoto(req.user.id, albumId, photoId);
+    @Res() res: Response,
+    @Query('size') size?: 'thumbnail' | 'original'
+  ): Promise<void> {
+    // Vérifier que l'album appartient à l'utilisateur
+    await this.albumsService.findOne(req.user.id, albumId);
+    
+    // Vérifier que la photo existe et appartient à l'album
+    const photo = await this.photosService.getPhoto(req.user.id, albumId, photoId);
+    
+    // Déterminer le chemin du fichier selon la taille demandée
+    let filePath: string;
+    if (size === 'thumbnail') {
+      filePath = path.join(process.cwd(), 'albums', req.user.id, albumId, 'thumbnails', `${photoId}.webp`);
+    } else {
+      filePath = path.join(process.cwd(), 'albums', req.user.id, albumId, `${photoId}.webp`);
+    }
+    
+    // Vérifier que le fichier existe
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException('Fichier non trouvé');
+    }
+    
+    // Servir l'image avec le bon type MIME
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache 1 an
+    res.sendFile(filePath);
   }
 
   // Ajouter une photo à un album
