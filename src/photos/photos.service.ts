@@ -3,8 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Photo } from './entities/photo.entity';
 import { Album } from '../albums/entities/album.entity';
-import { PhotosResponse, PhotosThumbnailsResponse } from './interfaces/photos-response.interface';
-import { PhotoThumbnail } from './interfaces/photo-thumbnail.interface';
+import { PhotosResponse } from './interfaces/photos-response.interface';
 import * as fs from 'fs';
 import * as path from 'path';
 import sharp from 'sharp';
@@ -225,7 +224,7 @@ export class PhotosService {
     }
   }
 
-  // Récupérer toutes les photos d'un album (avec images complètes)
+  // Récupérer toutes les photos d'un album (avec toutes les informations)
   async getAlbumPhotos(userId: string, albumId: string, limit?: number, offset: number = 0, order: 'asc' | 'desc' = 'desc'): Promise<PhotosResponse> {
     // Vérifier que l'album existe et appartient à l'utilisateur
     await this.verifyAlbumOwnership(userId, albumId);
@@ -250,47 +249,6 @@ export class PhotosService {
     
     return {
       photos,
-      total,
-      limit,
-      offset
-    };
-  }
-  
-  // Récupérer uniquement les miniatures des photos d'un album (pour les listes)
-  async getAlbumPhotoThumbnails(userId: string, albumId: string, limit?: number, offset: number = 0, order: 'asc' | 'desc' = 'desc'): Promise<PhotosThumbnailsResponse> {
-    // Vérifier que l'album existe et appartient à l'utilisateur
-    await this.verifyAlbumOwnership(userId, albumId);
-    
-    // Construire la requête avec TypeORM
-    const queryBuilder = this.photoRepository
-      .createQueryBuilder('photo')
-      .select(['photo.id', 'photo.thumbnailUrl', 'photo.thumbnailFileName', 'photo.createdAt', 'photo.albumId'])
-      .where('photo.albumId = :albumId', { albumId })
-      .orderBy('photo.createdAt', order.toUpperCase() as 'ASC' | 'DESC');
-    
-    // Compter le total
-    const total = await queryBuilder.getCount();
-    
-    // Appliquer l'offset et la limite
-    if (limit && limit > 0) {
-      queryBuilder.offset(offset).limit(limit);
-    } else if (offset > 0) {
-      queryBuilder.offset(offset);
-    }
-    
-    const photos = await queryBuilder.getMany();
-    
-    // Convertir en miniatures
-    const thumbnails: PhotoThumbnail[] = photos.map(photo => ({
-      id: photo.id,
-      thumbnailUrl: photo.thumbnailUrl,
-      thumbnailFileName: photo.thumbnailFileName,
-      createdAt: photo.createdAt,
-      albumId: photo.albumId
-    }));
-    
-    return {
-      photos: thumbnails,
       total,
       limit,
       offset

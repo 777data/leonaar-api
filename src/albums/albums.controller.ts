@@ -21,7 +21,7 @@ import { UpdateAlbumDto } from './dto/update-album.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { Album } from './interfaces/album.interface';
 import type { Photo } from '../photos/entities/photo.entity';
-import type { PhotosResponse, PhotosThumbnailsResponse } from '../photos/interfaces/photos-response.interface';
+import type { PhotosResponse } from '../photos/interfaces/photos-response.interface';
 import * as fs from 'fs'; 
 import * as path from 'path'; 
 
@@ -60,19 +60,19 @@ export class AlbumsController {
 
   // === ENDPOINTS POUR LES PHOTOS ===
 
-  // Récupérer les miniatures des photos d'un album (pour les listes)
+  // Récupérer toutes les photos d'un album (avec toutes les informations)
   @Get(':id/photos')
-  async getAlbumPhotoThumbnails(
+  async getAlbumPhotos(
     @Request() req,
     @Param('id') albumId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
     @Query('order') order?: 'asc' | 'desc',
-  ): Promise<PhotosThumbnailsResponse> {
+  ): Promise<PhotosResponse> {
     const maxPhotos = limit ? parseInt(limit, 10) : undefined;
     const offsetValue = offset ? parseInt(offset, 10) : 0;
     const sortOrder = order === 'asc' ? 'asc' : 'desc'; // Par défaut: desc (plus récentes en premier)
-    return await this.photosService.getAlbumPhotoThumbnails(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
+    return await this.photosService.getAlbumPhotos(req.user.id, albumId, maxPhotos, offsetValue, sortOrder);
   }
 
   // Récupérer une photo spécifique (taille réelle)
