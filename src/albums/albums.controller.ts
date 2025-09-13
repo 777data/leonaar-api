@@ -12,6 +12,7 @@ import {
   Res,
   ForbiddenException,
   NotFoundException,
+  Put,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AlbumsService } from './albums.service';
@@ -48,7 +49,7 @@ export class AlbumsController {
     return await this.albumsService.findOne(req.user.id, id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   async update(@Request() req, @Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto): Promise<Album> {
     return await this.albumsService.update(req.user.id, id, updateAlbumDto);
   }
